@@ -1601,3 +1601,45 @@ footer i {
     padding: 26px 22px;
   }
 }
+
+/* Legibilidade: escala tipográfica e controles */
+.app { font-size: 16px; line-height: 1.5; }
+.brand small, .nav-label, .eyebrow, footer { font-size: 11px; }
+.workspace b, .profile b, .secure b, .breadcrumbs, .page-heading p, .panel-heading p,
+.system-status, .stat-top, .stat-foot, .priority-info b, .priority-due b,
+.delivery-total span, .stage-summary div, .result-count, .settings-panel > p,
+.theme-option span, .setup-notice b, .modal-heading p, .field label,
+.detail-summary span, .detail-next, .compact-grid .field label,
+.compact-grid .production-register p { font-size: 14px; }
+.workspace small, .profile small, .secure small, .nav-item, .text-btn,
+.priority-info span, .priority-due span, .legend span, table, .empty-state,
+.theme-option b, .setup-notice p, .form-section-title, .status-pill,
+.stage-label, .detail-summary b, .detail-item-top small, .item-metrics span,
+.auth-eyebrow, .auth-error, .auth-security { font-size: 13px; }
+.page-heading h1 { font-size: clamp(27px, 2.2vw, 32px); line-height: 1.2; }
+.panel-heading h2, .settings-panel h2 { font-size: 16px; }
+.primary-btn, .secondary-btn { font-size: 15px; min-height: 42px; padding: 11px 15px; }
+input, select, textarea, .search-box input, .select-wrap select,
+.field input, .field select { font-size: 16px; }
+.search-box, .select-wrap { min-height: 42px; }
+.field { gap: 8px; }
+.field label { font-size: 14px; }
+table { font-size: 14px; line-height: 1.45; }
+thead th { font-size: 13px; padding: 11px 13px; }
+tbody td { padding: 11px 13px; }
+tbody td b { font-size: 14px; }
+tbody td small { font-size: 12px; }
+.detail-item-top b { font-size: 16px; }
+.item-metrics b { font-size: 16px; }
+.detail-modal .modal-heading h2 { font-size: 25px; }
+.detail-modal .modal-heading p { font-size: 14px; }
+.compact-grid .field input { font-size: 16px; }
+.auth-form label { font-size: 15px; }
+.auth-form input { font-size: 16px; }
+@media (max-width: 560px) {
+  .topbar { padding: 0 12px; }
+  .content { padding: 22px 14px 16px; }
+  table { font-size: 13px; }
+  thead th { padding: 10px 11px; }
+  tbody td { padding: 10px 11px; }
+}
