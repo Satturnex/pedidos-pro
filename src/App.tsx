@@ -1841,20 +1841,11 @@ export default function App({ profile, onLogout }: AppProps) {
                         setDeliverySuccess("");
 
                         try {
-                          await registerDelivery({
+                          const delivered = await registerDelivery({
                             orderId: selected.dbId,
                             orderItemId: item.id,
                             quantity: Number(deliveryQuantity),
-                            userId: profile.user_id,
                           });
-
-                          const deliveries = await getOrderDeliveries(
-                            selected.dbId,
-                          );
-                          const saved = deliveries.find(
-                            (entry) => entry.orderItemId === item.id,
-                          );
-                          const delivered = saved?.quantityDelivered ?? 0;
 
                           const updated: Order = {
                             ...selected,
@@ -1892,6 +1883,7 @@ export default function App({ profile, onLogout }: AppProps) {
 
                           setDeliveryQuantity("0");
                           setDeliverySuccess("Entrega registrada com sucesso.");
+                          setSelected(null);
                         } catch (error) {
                           setDeliveryError(
                             error instanceof Error

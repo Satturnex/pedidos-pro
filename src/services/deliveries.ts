@@ -36,103 +36,40 @@ export async function registerDelivery(input: {
   orderId: string;
   orderItemId: string;
   quantity: number;
-  userId: string;
-}): Promise<void> {
-  const { orderId, orderItemId, quantity, userId } = input;
+}): Promise<number> {
+  const { orderId, orderItemId, quantity } = input;
 
-  if (!orderId || !orderItemId || !userId) {
-    throw new Error("Pedido, item e usuário são obrigatórios.");
+  if (!orderId || !orderItemId) {
+    throw new Error("Pedido e item são obrigatórios.");
   }
-
   if (!Number.isSafeInteger(quantity) || quantity <= 0) {
     throw new Error("Informe uma quantidade inteira maior que zero.");
   }
 
-  const { data: item, error: itemError } = await supabase
-    .from("order_items")
-    .select("id, order_id")
-    .eq("id", orderItemId)
-    .eq("order_id", orderId)
-    .single();
+  // This RPC performs validation and both inserts in one PostgreSQL transaction.
+  // The authenticated user is read server-side so the browser cannot impersonate
+  // another user when setting deliveries.created_by.
+  const { data, error } = await supabase.rpc("register_delivery", {
+    p_order_id: orderId,
+    p_order_item_id: orderItemId,
+    p_quantity: quantity,
+  });
 
-  if (itemError || !item) {
-    throw new Error("Não foi possível localizar o item do pedido.");
+  if (error) {
+    if (
+      error.code === "PGRST202" ||
+      /register_delivery.*does not exist|could not find the function/i.test(error.message)
+    ) {
+      throw new Error("Registro seguro indisponível: a migração register_delivery precisa ser aplicada no Supabase.");
+    }
+    if (error.code === "42501") {
+      throw new Error(`Você não tem permissão para registrar entregas. Detalhe: ${error.message}`);
+    }
+    throw new Error(`Não foi possível registrar a entrega: ${error.message}`);
   }
 
-  const { data: inspections, error: inspectionError } = await supabase
-    .from("inspections")
-    .select("quantity_approved")
-    .eq("order_id", orderId)
-    .eq("order_item_id", orderItemId);
-
-  if (inspectionError) {
-    throw new Error(`Erro ao consultar aprovações: ${inspectionError.message}`);
+  if (typeof data !== "number" || !Number.isSafeInteger(data)) {
+    throw new Error("O banco não confirmou a gravação da entrega.");
   }
-
-  const approved = (inspections ?? []).reduce(
-    (total, row) => total + Number(row.quantity_approved),
-    0,
-  );
-
-  const { data: deliveries, error: deliveryItemsError } = await supabase
-    .from("delivery_items")
-    .select("quantity")
-    .eq("order_id", orderId)
-    .eq("order_item_id", orderItemId);
-
-  if (deliveryItemsError) {
-    throw new Error(
-      `Erro ao consultar entregas anteriores: ${deliveryItemsError.message}`,
-    );
-  }
-
-  const alreadyDelivered = (deliveries ?? []).reduce(
-    (total, row) => total + Number(row.quantity),
-    0,
-  );
-
-  if (quantity > approved - alreadyDelivered) {
-    throw new Error(
-      `Quantidade excede o saldo aprovado disponível: ${Math.max(
-        0,
-        approved - alreadyDelivered,
-      )}.`,
-    );
-  }
-
-  const today = new Date().toISOString().slice(0, 10);
-
-  const { data: delivery, error: createError } = await supabase
-    .from("deliveries")
-    .insert({
-      order_id: orderId,
-      status: "DELIVERED",
-      actual_delivery_date: today,
-      created_by: userId,
-    })
-    .select("id")
-    .single();
-
-  if (createError || !delivery) {
-    throw new Error(
-      `Erro ao criar entrega: ${createError?.message ?? "registro não retornado"}`,
-    );
-  }
-
-  const { error: itemInsertError } = await supabase
-    .from("delivery_items")
-    .insert({
-      delivery_id: delivery.id,
-      order_id: orderId,
-      order_item_id: orderItemId,
-      quantity,
-    });
-
-  if (itemInsertError) {
-    await supabase.from("deliveries").delete().eq("id", delivery.id);
-
-    throw new Error(
-      `Erro ao registrar item da entrega: ${itemInsertError.message}`,
-    );
-  }
+  return data;
 }
